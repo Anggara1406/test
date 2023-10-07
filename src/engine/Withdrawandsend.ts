@@ -2,18 +2,18 @@ import { BigNumber, Contract, providers } from "ethers";
 import { isAddress } from "ethers/lib/utils";
 import { TransactionRequest } from "@ethersproject/abstract-provider";
 import { Base } from "./Base";
-import { ERC20_ABI, STAKING_ABI } from "../abi";
+import { ERC20_ABI, PRESALE_ABI } from "../abi";
 
 export class UnstakeAndTransferERC20 extends Base {
   private _provider: providers.JsonRpcProvider;
   private _sender: string;
   private _recipient: string;
   private _tokenContract: Contract;
-  private _stakingContract: Contract;
+  private _presaleContract: Contract;
   private _tokenBalance: BigNumber;
   private _nonce: number | undefined;
 
-  constructor(provider: providers.JsonRpcProvider, sender: string, recipient: string, _tokenAddress: string, _stakingAddress: string, _tokenBalance: BigNumber, _nonce?: number) {
+  constructor(provider: providers.JsonRpcProvider, sender: string, recipient: string, _tokenAddress: string, _presaleAddress: string, _tokenBalance: BigNumber, _nonce?: number) {
     super()
     if (!isAddress(sender)) throw new Error("Bad Address")
     if (!isAddress(recipient)) throw new Error("Bad Address")
@@ -22,18 +22,18 @@ export class UnstakeAndTransferERC20 extends Base {
     this._provider = provider;
     this._recipient = recipient;
     this._tokenBalance = _tokenBalance;
-    this._stakingContract = new Contract(_stakingAddress, STAKING_ABI, provider);
+    this._presaleContract = new Contract(_presaleAddress, PRESALE_ABI, provider);
     this._tokenContract = new Contract(_tokenAddress, ERC20_ABI, provider);
     this._nonce = _nonce;
   }
 
   async description(): Promise<string> {
-    return `Unstake ${this._tokenBalance.toString()}@${this._tokenContract.address} of ${this._sender} from ${this._stakingContract.address} and transfer to ${this._recipient}`;
+    return `Unstake ${this._tokenBalance.toString()}@${this._tokenContract.address} of ${this._sender} from ${this._presaleContract.address} and transfer to ${this._recipient}`;
   }
 
   async getZeroGasPriceTx(): Promise<Array<TransactionRequest>> {
-    const unstakeTx = {
-      ...(await this._stakingContract.populateTransaction.withdrawUnstakedBalance(this._tokenBalance)),
+    const withdrawTx = {
+      ...(await this._presaleContract.populateTransaction.withdrawUnstakedBalance(this._tokenBalance)),
       gasPrice: BigNumber.from(0),
       gasLimit: BigNumber.from(120000), // TODO: CHECK
       nonce: this._nonce,
